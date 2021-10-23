@@ -3,6 +3,7 @@ from PIL import Image
 import natsort
 import torch
 from torchvision import datasets, transforms
+GPU_NUMBER = 0
 
 def load_class(path = "2021VRDL_HW1_datasets/classes.txt"):
         with open(path, newline='') as fh:
@@ -28,7 +29,7 @@ def load_train_label(path = "2021VRDL_HW1_datasets/training_labels.txt"):
             for i in  range(len(L)):
                 # L[i] = one_hot_vector(int(L[i][1][0:3]))
                 L[i] = int(L[i][1][0:3])-1
-        return torch.tensor(L)
+        return torch.tensor(L).cuda(GPU_NUMBER)
 
 class CustomDataSet():
     def __init__(self, main_dir, transform):
@@ -53,5 +54,5 @@ def get_dataset(path):
     L=[]
     for index in range(len(temp)):
         L.append(temp[index])
-    L=torch.tensor([item.detach().numpy() for item in L])
+    L=torch.tensor([item.cpu().detach().numpy() for item in L]).cuda(GPU_NUMBER)
     return L

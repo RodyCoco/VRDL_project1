@@ -3,6 +3,7 @@ import torch.nn as nn
 import torchvision
 import numpy as np
 import math
+import torchvision.models as models
 
 print("PyTorch Version: ",torch.__version__)
 print("Torchvision Version: ",torchvision.__version__)
