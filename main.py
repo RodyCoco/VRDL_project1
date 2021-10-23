@@ -48,7 +48,7 @@ def procedure():
     for epoch in range(epochs) :
         train_loss = train(model, train_loader, loss_function, optimizer)
         
-        print(epoch,": ",eval_acc(model,train_loader))
+        print(epoch+1,": ",eval_acc(model,train_loader)," ",train_loss)
         scheduler.step()
 
         writer.add_scalar("Loss/train_loss", train_loss, epoch + 1)
@@ -88,7 +88,7 @@ def eval_acc(model,loader,number_of_data = 3000):
             out = model(x.type(torch.DoubleTensor).cuda(GPU_NUMBER)).double()
             tmp = []
             for idx, item in enumerate(out):
-                tmp.append(np.argmax(item.cpu().detach().numpy()) + 1)
+                tmp.append(np.argmax(item.cpu().detach().numpy()))
             tmp = np.asarray(tmp)
             y = np.asarray(y.cpu().detach().numpy())
             for item in (y-tmp):
