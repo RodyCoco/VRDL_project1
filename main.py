@@ -6,14 +6,15 @@ from PIL import Image
 import torchvision.models as models
 from IPython.display import display
 from data_gen import CustomDataSet, get_dataset, load_class, load_train_label, GPU_NUMBER
-from model import ResNet, ResNet50, softmax
+from model import ResNet, ResNet50, model_urls
 import torch.utils.data as Data
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from torch.utils.model_zoo import load_url as load_state_dict_from_url
 
 lr = 0.001
 epochs = 100
-batch_size = 32
+batch_size = 16
 
 def procedure():
     torch.manual_seed(0)
@@ -24,16 +25,15 @@ def procedure():
     bird_class = load_class()
     train_label = load_train_label()
 
-    model = ResNet50().cuda(GPU_NUMBER)
+    model = models.resnet50(pretrained=True).cuda(GPU_NUMBER)
+    num_ftrs = model.fc.in_features
+    model.fc = torch.nn.Linear(num_ftrs, 200).cuda(GPU_NUMBER)
     model.double()
     print("load model done")
-
+    
     train_data = get_dataset("2021VRDL_HW1_datasets/training_images")
     train_dataset = Data.TensorDataset(train_data, train_label)
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-    # print(train_data[0].shape)
-    # plt.imshow(train_dataset[0].swapaxes(0,1).swapaxes(1,2))
-    # plt.show()
 
     optimizer = torch.optim.Adam(model.parameters(),lr=lr)
     writer = SummaryWriter()
@@ -80,21 +80,21 @@ def train(model, train_loader, loss_function, optimizer):
 
     return sum(loss_list) / len(loss_list)
 
-def eval_acc(model,loader):
+def eval_acc(model,loader,number_of_data = 3000):
     model.eval()
     acc = 0
-    L = len(loader)
-    for index, (x,y) in enumerate(loader):
-        out = model(x.type(torch.DoubleTensor).cuda(GPU_NUMBER)).double()
-        tmp = []
-        for idx, item in enumerate(out):
-            tmp.append(np.argmax(item.cpu().detach().numpy()) + 1)
-        tmp = np.asarray(tmp)
-        y = np.asarray(y.cpu().detach().numpy())
-        for item in (y-tmp):
-            if item == 0:
-                acc +=1
-    return (acc/L)
+    with torch.no_grad():
+        for index, (x,y) in enumerate(loader):
+            out = model(x.type(torch.DoubleTensor).cuda(GPU_NUMBER)).double()
+            tmp = []
+            for idx, item in enumerate(out):
+                tmp.append(np.argmax(item.cpu().detach().numpy()) + 1)
+            tmp = np.asarray(tmp)
+            y = np.asarray(y.cpu().detach().numpy())
+            for item in (y-tmp):
+                if item == 0:
+                    acc +=1
+    return (acc/number_of_data)
 
 if __name__ == '__main__':
     procedure()
