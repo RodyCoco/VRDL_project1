@@ -6,11 +6,11 @@ from torchvision import datasets, transforms
 GPU_NUMBER = 0
 
 def load_class(path = "2021VRDL_HW1_datasets/classes.txt"):
-        with open(path, newline='') as fh:
-            cls = fh.readlines()
-            for i in range(len(cls)):
-                cls[i] = cls[i].strip("\n")
-        return cls
+    with open(path, newline='') as fh:
+        cls = fh.readlines()
+        for i in range(len(cls)):
+            cls[i] = cls[i].strip("\n")
+    return cls
 
 def one_hot_vector(n,dim=200):
     L=[0]*dim

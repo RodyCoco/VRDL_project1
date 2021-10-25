@@ -13,7 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.model_zoo import load_url as load_state_dict_from_url
 
 lr = 0.001
-epochs = 100
+epochs = 40
 batch_size = 16
 
 def procedure():
@@ -50,7 +50,6 @@ def procedure():
         
         print(epoch+1,": ",eval_acc(model,train_loader)," ",train_loss)
         scheduler.step()
-
         writer.add_scalar("Loss/train_loss", train_loss, epoch + 1)
         # writer.add_scalar("Loss/val_loss", valid_loss, epoch + 1)
         # writer.add_scalar("Loss/test_loss", test_loss, epoch + 1)
@@ -62,7 +61,8 @@ def procedure():
         #     torch.save(model.state_dict(), 'model.pkl')
         #     print("Save model")
         #     min_loss = valid_loss
-            
+    torch.save(model.state_dict(), 'resnet50.pkl')
+    print("Save model")
     writer.close()
 
 def train(model, train_loader, loss_function, optimizer):
