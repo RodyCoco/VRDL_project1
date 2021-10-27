@@ -14,7 +14,7 @@ import datetime
 
 lr = 0.001
 epochs = 60
-batch_size = 16
+batch_size = 32
 
 def procedure():
     torch.manual_seed(0)
@@ -22,18 +22,18 @@ def procedure():
     torch.cuda.manual_seed_all(0)
     np.random.seed(0)
     
-    model = models.resnet50(pretrained=True).cuda(GPU_NUMBER)
+    model = models.resnet152(pretrained=True).cuda(GPU_NUMBER)
     num_ftrs = model.fc.in_features
     model.fc = torch.nn.Linear(num_ftrs, 200).cuda(GPU_NUMBER)
+    model = torch.nn.DataParallel(model, device_ids=[1, 2, 3])
     model.double()
     print("model done")
 
     # bird_class = load_class()
     train_label = load_train_label()
     train_data = get_dataset("2021VRDL_HW1_datasets/training_images")
-    origin_train_data = get_dataset("2021VRDL_HW1_datasets/training_images")
     train_dataset = Data.TensorDataset(train_data, train_label)
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
     print("train_data  done")
 
@@ -66,7 +66,7 @@ def train(model, train_loader, loss_function, optimizer):
         out = model(x.type(torch.DoubleTensor).cuda(GPU_NUMBER)).double().cuda(GPU_NUMBER)
         optimizer.zero_grad()
         # print(out.shape,y.shape)
-        loss = loss_function(out,y)
+        loss = loss_function(out,y.cuda(GPU_NUMBER))
         loss_list.append(loss.item())
         loss.backward()
         optimizer.step()
@@ -81,7 +81,7 @@ def eval_acc(model,loader,number_of_data = 3000):
             out = model(x.type(torch.DoubleTensor).cuda(GPU_NUMBER)).double()
             tmp = np.asarray([np.argmax(item.cpu().detach().numpy()) for item in out])
             y = np.asarray(y.cpu().detach().numpy())
-            acc += np.count_nonzero(y-tmp == 0)
+            acc += np.count_nonzero((y-tmp) == 0)
     return (acc/number_of_data)
 
 if __name__ == '__main__':

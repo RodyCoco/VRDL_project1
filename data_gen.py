@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from torchvision import datasets
 import torchvision.transforms as tfs
 
-GPU_NUMBER = 0
+GPU_NUMBER = 1
 
 def load_class(path = "2021VRDL_HW1_datasets/classes.txt"):
     with open(path, newline='') as fh:
@@ -27,8 +27,7 @@ def load_train_label(path = "2021VRDL_HW1_datasets/training_labels.txt"):
         for i in  range(len(L)):
             # L[i] = one_hot_vector(int(L[i][1][0:3]))
             L[i] = int(L[i][1][0:3])-1
-    return torch.tensor(L).cuda(GPU_NUMBER)
-
+    return torch.tensor(L)
 class CustomDataSet():
     def __init__(self, main_dir, transform):
         self.main_dir = main_dir
@@ -48,9 +47,10 @@ class CustomDataSet():
 
 def get_dataset(path):
     L=[]
-    transform = tfs.Compose([tfs.Resize(224),tfs.ToTensor()])
+    transform = tfs.Compose([tfs.Resize([224,224]),tfs.ToTensor()])
     temp = CustomDataSet(path,transform=transform)
     for idx,img in enumerate(temp):
         L.append(img)
-    L=torch.tensor([item.cpu().detach().numpy() for item in L]).cuda(GPU_NUMBER)
+    
+    L=torch.tensor([item.cpu().detach().numpy() for item in L])
     return L
