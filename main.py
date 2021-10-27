@@ -10,10 +10,10 @@ from model import ResNet, ResNet50, model_urls
 import torch.utils.data as Data
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from torch.utils.model_zoo import load_url as load_state_dict_from_url
+
 
 lr = 0.001
-epochs = 40
+epochs = 100
 batch_size = 16
 
 def procedure():
@@ -28,6 +28,7 @@ def procedure():
     model = models.resnet50(pretrained=True).cuda(GPU_NUMBER)
     num_ftrs = model.fc.in_features
     model.fc = torch.nn.Linear(num_ftrs, 200).cuda(GPU_NUMBER)
+
     model.double()
     print("load model done")
     
@@ -42,27 +43,13 @@ def procedure():
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=decay)
     min_loss = np.inf
 
-    # train_dataset = datasets.DatasetFolder('2021VRDL_HW1_datasets/training_images', transform=transform)
-    # test_dataset = datasets.DatasetFolder('2021VRDL_HW1_datasets/testing_images', transform=transform)
 
     for epoch in range(epochs) :
         train_loss = train(model, train_loader, loss_function, optimizer)
-        
         print(epoch+1,": ",eval_acc(model,train_loader)," ",train_loss)
         scheduler.step()
         writer.add_scalar("Loss/train_loss", train_loss, epoch + 1)
-        # writer.add_scalar("Loss/val_loss", valid_loss, epoch + 1)
-        # writer.add_scalar("Loss/test_loss", test_loss, epoch + 1)
-        # writer.add_scalars("Loss/total_loss", {'train_loss':train_loss, 'val_loss':valid_loss, 'test_loss':test_loss}, epoch + 1)
-        # writer.flush()
-
-        # print("Epoch[{:3d}/{}]\ttrain:{:5f}, valid:{:5f}, test:{:5f}".format(epoch+1, epochs, train_loss, valid_loss, test_loss))
-        # if valid_loss < min_loss:
-        #     torch.save(model.state_dict(), 'model.pkl')
-        #     print("Save model")
-        #     min_loss = valid_loss
-    torch.save(model.state_dict(), 'resnet50.pkl')
-    print("Save model")
+            
     writer.close()
 
 def train(model, train_loader, loss_function, optimizer):
