@@ -2,7 +2,10 @@ import os
 from PIL import Image
 import natsort
 import torch
-from torchvision import datasets, transforms
+import matplotlib.pyplot as plt
+from torchvision import datasets
+import torchvision.transforms as tfs
+
 GPU_NUMBER = 0
 
 def load_class(path = "2021VRDL_HW1_datasets/classes.txt"):
@@ -12,24 +15,19 @@ def load_class(path = "2021VRDL_HW1_datasets/classes.txt"):
             cls[i] = cls[i].strip("\n")
     return cls
 
-def one_hot_vector(n,dim=200):
-    L=[0]*dim
-    L[n-1] = 1
-    return L
-
 def load_train_label(path = "2021VRDL_HW1_datasets/training_labels.txt"):
-        with open(path, newline='') as fh:
-            data = fh.readlines()
-            L = []
-            for item in data:
-                item=item.strip('\n\r')
-                temp = item.split(" ")
-                L.append([temp[0],temp[1]])
-            L.sort(key = lambda s:s[0])
-            for i in  range(len(L)):
-                # L[i] = one_hot_vector(int(L[i][1][0:3]))
-                L[i] = int(L[i][1][0:3])-1
-        return torch.tensor(L).cuda(GPU_NUMBER)
+    with open(path, newline='') as fh:
+        data = fh.readlines()
+        L = []
+        for item in data:
+            item=item.strip('\n\r')
+            temp = item.split(" ")
+            L.append([temp[0],temp[1]])
+        L.sort(key = lambda s:s[0])
+        for i in  range(len(L)):
+            # L[i] = one_hot_vector(int(L[i][1][0:3]))
+            L[i] = int(L[i][1][0:3])-1
+    return torch.tensor(L).cuda(GPU_NUMBER)
 
 class CustomDataSet():
     def __init__(self, main_dir, transform):
@@ -49,10 +47,10 @@ class CustomDataSet():
         return tensor_image
 
 def get_dataset(path):
-    transform = transforms.Compose([transforms.Resize(255),transforms.CenterCrop(224),transforms.ToTensor()])
-    temp = CustomDataSet(path,transform=transform)
     L=[]
-    for index in range(len(temp)):
-        L.append(temp[index])
+    transform = tfs.Compose([tfs.Resize(224),tfs.ToTensor()])
+    temp = CustomDataSet(path,transform=transform)
+    for idx,img in enumerate(temp):
+        L.append(img)
     L=torch.tensor([item.cpu().detach().numpy() for item in L]).cuda(GPU_NUMBER)
     return L

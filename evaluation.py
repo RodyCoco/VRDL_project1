@@ -15,7 +15,7 @@ def procedure():
     model = models.resnet50().cuda(GPU_NUMBER)
     num_ftrs = model.fc.in_features
     model.fc = torch.nn.Linear(num_ftrs, 200).cuda(GPU_NUMBER)
-    model.load_state_dict(torch.load("resnet50.pkl"))
+    model.load_state_dict(torch.load("resnet50_29.pkl"))
     model.double()
     model.eval()
     print("load model done")
@@ -33,13 +33,12 @@ def procedure():
     # tmp = np.asarray(tmp)
     with open('2021VRDL_HW1_datasets/testing_img_order.txt') as f:
         test_images = [x.strip() for x in f.readlines()]  # all the testing images
-    test_images = ["4283.jpg","3982.jpg","5836.jpg"]
     submission = []
     print(len(test_images))
     with torch.no_grad():
         for img_name in test_images:  # image order is important to your result
-            transform = transforms.Compose([transforms.Resize(255),transforms.CenterCrop(224),transforms.ToTensor()])
-            image = Image.open("2021VRDL_HW1_datasets/training_images/"+img_name).convert("RGB")
+            transform = transforms.Compose([transforms.Resize(255),transforms.CenterCrop(224)])
+            image = Image.open("2021VRDL_HW1_datasets/testing_images/"+img_name).convert("RGB")
             tensor_image = transform(image)
             tensor_image = tensor_image.unsqueeze(0)
             tensor_image = torch.tensor(tensor_image).clone().detach().cuda(GPU_NUMBER)
