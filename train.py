@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image 
 import torchvision.models as models
 from IPython.display import display
-from data_gen import CustomDataSet, get_dataset, load_class, load_train_label, GPU_NUMBER
+from data_gen import CustomDataSet, get_dataset, load_class, load_eval_label, load_train_label, GPU_NUMBER,get_origin_dataset
 from model import ResNet, ResNet50, model_urls
 import torch.utils.data as Data
 from torch.utils.data import DataLoader
@@ -13,7 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.model_zoo import load_url as load_state_dict_from_url
 
 lr = 0.001
-epochs = 40
+epochs = 60
 batch_size = 16
 
 def procedure():
@@ -23,18 +23,26 @@ def procedure():
     np.random.seed(0)
 
     bird_class = load_class()
-    train_label = load_train_label()
+    origin_train_label = load_eval_label()
+    train_label = load_train_label(origin_train_label)
 
+    
     model = models.resnet50(pretrained=True).cuda(GPU_NUMBER)
     num_ftrs = model.fc.in_features
     model.fc = torch.nn.Linear(num_ftrs, 200).cuda(GPU_NUMBER)
     model.double()
-    print("load model done")
-    
+    print("model done")
+
     train_data = get_dataset("2021VRDL_HW1_datasets/training_images")
+    origin_train_data = get_origin_dataset("2021VRDL_HW1_datasets/training_images")
     train_dataset = Data.TensorDataset(train_data, train_label)
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-
+    origin_train_dataset = Data.TensorDataset(origin_train_data, origin_train_label)
+    origin_train_loader = DataLoader(dataset=origin_train_dataset, batch_size=batch_size, shuffle=True)
+    print("train_data  done")
+    # for i in range(0,11):
+    #     plt.imshow(train_data[0][i].cpu().permute(1, 2, 0))
+    #     plt.savefig(f"test{i}.png")
     optimizer = torch.optim.Adam(model.parameters(),lr=lr)
     writer = SummaryWriter()
     loss_function = torch.nn.CrossEntropyLoss()
@@ -48,9 +56,11 @@ def procedure():
     for epoch in range(epochs) :
         train_loss = train(model, train_loader, loss_function, optimizer)
         
-        print(epoch+1,": ",eval_acc(model,train_loader)," ",train_loss)
+        print(epoch+1,": ",eval_acc(model,origin_train_loader)," ",train_loss)
         scheduler.step()
         writer.add_scalar("Loss/train_loss", train_loss, epoch + 1)
+        torch.save(model.state_dict(), f'/tmp/resnet50_{epoch+1}.pkl')
+        print("Save model")
         # writer.add_scalar("Loss/val_loss", valid_loss, epoch + 1)
         # writer.add_scalar("Loss/test_loss", test_loss, epoch + 1)
         # writer.add_scalars("Loss/total_loss", {'train_loss':train_loss, 'val_loss':valid_loss, 'test_loss':test_loss}, epoch + 1)
@@ -61,8 +71,7 @@ def procedure():
         #     torch.save(model.state_dict(), 'model.pkl')
         #     print("Save model")
         #     min_loss = valid_loss
-    torch.save(model.state_dict(), 'resnet50.pkl')
-    print("Save model")
+    
     writer.close()
 
 def train(model, train_loader, loss_function, optimizer):
