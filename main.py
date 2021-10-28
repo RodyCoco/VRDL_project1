@@ -1,11 +1,12 @@
 import matplotlib.pyplot as plt
 import torch
-from torchvision import datasets, transforms
+from torchvision import datasets
+import torchvision.transforms as tfs
 import numpy as np
 from PIL import Image 
 import torchvision.models as models
 from IPython.display import display
-from data_gen import CustomDataSet, get_dataset, load_train_label, GPU_NUMBER
+from data_gen import TrainDataSet, load_train_label, GPU_NUMBER, get_dataset
 from model import ResNet, ResNet50
 import torch.utils.data as Data
 from torch.utils.data import DataLoader
@@ -15,6 +16,14 @@ import datetime
 lr = 0.001
 epochs = 60
 batch_size = 32
+train_trans = tfs.Compose([
+    tfs.Resize((224, 224), Image.BILINEAR),
+    tfs.RandomHorizontalFlip(),
+    tfs.ColorJitter(0.2,0.2,0.2,0.2),
+    tfs.RandomRotation(degrees=45),
+    tfs.ToTensor(),
+    tfs.Normalize(mean=[0.5,0.5,0.5], std=[0.2, 0.2, 0.2]),
+])
 
 def procedure():
     torch.manual_seed(0)
@@ -22,21 +31,20 @@ def procedure():
     torch.cuda.manual_seed_all(0)
     np.random.seed(0)
     
-    model = models.resnet152(pretrained=True).cuda(GPU_NUMBER)
+    model = models.resnet50(pretrained=True).cuda(GPU_NUMBER)
     num_ftrs = model.fc.in_features
     model.fc = torch.nn.Linear(num_ftrs, 200).cuda(GPU_NUMBER)
-    model = torch.nn.DataParallel(model, device_ids=[1, 2, 3])
+    model = torch.nn.DataParallel(model, device_ids=[0, 1, 2, 3])
     model.double()
     print("model done")
 
-    # bird_class = load_class()
     train_label = load_train_label()
-    train_data = get_dataset("2021VRDL_HW1_datasets/training_images")
-    train_dataset = Data.TensorDataset(train_data, train_label)
+    train_data = get_dataset(train_trans)
+    train_dataset = Data.TensorDataset(train_data,train_label)
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-
+    # input()
     print("train_data  done")
-
+    
     # for i in range(0,11):
     #     plt.imshow(train_data[0][i].cpu().permute(1, 2, 0))
     #     plt.savefig(f"test{i}.png")
@@ -54,18 +62,19 @@ def procedure():
         print(epoch+1,": ",eval_acc(model,train_loader)," ",train_loss)
         scheduler.step()
         writer.add_scalar("Loss/train_loss", train_loss, epoch + 1)
-        torch.save(model.state_dict(), f'/tmp/resnet50_{epoch+1}.pkl')
+        torch.save(model.state_dict(), f'resnet152.pkl')
         print("Save model")
    
 
 def train(model, train_loader, loss_function, optimizer):
+    
     model.train()
     loss_list = []
 
     for index, (x,y) in enumerate(train_loader):
+        
         out = model(x.type(torch.DoubleTensor).cuda(GPU_NUMBER)).double().cuda(GPU_NUMBER)
         optimizer.zero_grad()
-        # print(out.shape,y.shape)
         loss = loss_function(out,y.cuda(GPU_NUMBER))
         loss_list.append(loss.item())
         loss.backward()

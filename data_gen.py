@@ -5,8 +5,8 @@ import torch
 import matplotlib.pyplot as plt
 from torchvision import datasets
 import torchvision.transforms as tfs
-
-GPU_NUMBER = 1
+import numpy as np
+GPU_NUMBER = 0
 
 def load_class(path = "2021VRDL_HW1_datasets/classes.txt"):
     with open(path, newline='') as fh:
@@ -28,12 +28,19 @@ def load_train_label(path = "2021VRDL_HW1_datasets/training_labels.txt"):
             # L[i] = one_hot_vector(int(L[i][1][0:3]))
             L[i] = int(L[i][1][0:3])-1
     return torch.tensor(L)
-class CustomDataSet():
-    def __init__(self, main_dir, transform):
+
+default_trans = tfs.Compose([
+    tfs.Resize((224, 224), Image.BILINEAR),
+    tfs.ToTensor(),
+    tfs.Normalize(mean=[0.5,0.5,0.5], std=[0.2, 0.2, 0.2])])
+
+class TrainDataSet():
+    def __init__(self, main_dir="2021VRDL_HW1_datasets/training_images", transform = default_trans):
         self.main_dir = main_dir
         self.transform = transform
         all_imgs = os.listdir(main_dir)
         self.total_imgs = natsort.natsorted(all_imgs)
+        self.labels= load_train_label()
 
     def __len__(self):
         return len(self.total_imgs)
@@ -41,14 +48,13 @@ class CustomDataSet():
     def __getitem__(self, idx):
         img_loc = os.path.join(self.main_dir, self.total_imgs [idx])
         image = Image.open(img_loc).convert("RGB")
-        tensor_image = self.transform(image)
+        image = self.transform(image)
         # tensor_image = tensor_image.unsqueeze(0)
-        return tensor_image
+        return image
 
-def get_dataset(path):
+def get_dataset(transform= default_trans):
     L=[]
-    transform = tfs.Compose([tfs.Resize([224,224]),tfs.ToTensor()])
-    temp = CustomDataSet(path,transform=transform)
+    temp = TrainDataSet(transform=transform)
     for idx,img in enumerate(temp):
         L.append(img)
     
