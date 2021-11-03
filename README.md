@@ -22,7 +22,7 @@ python main.py
 
 ## Evaluation
 
-To evaluate my model on ImageNet, run:
+To evaluate my model, run:
 
 ```eval
 python inference.py
