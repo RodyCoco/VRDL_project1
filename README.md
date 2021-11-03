@@ -8,6 +8,10 @@ To install requirements:
 pip install -r requirements.txt
 ```
 
+## Hardware
+
+NVIDIA GeForce 3090
+
 ## Training
 
 To train the model, run this command:
