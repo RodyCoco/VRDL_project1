@@ -27,3 +27,5 @@ To evaluate my model, run:
 ```eval
 python inference.py
 ```
+## Model Weight Link
+https://drive.google.com/drive/folders/1qMi1xaPWkpJr7vNadyh4fJ_niqN22O92?usp=sharing
